@@ -67,18 +67,18 @@ export default function OrdersPage() {
       <h1 className="text-2xl font-semibold">My Orders</h1>
 
       {/* Filters */}
-      <div className="glass rounded-xl p-4 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
+      <div className="bg-white border border-neutral-200 rounded-xl p-4 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 shadow-sm">
         <div>
-          <label className="block text-xs text-neutral-400 mb-1">Type</label>
-          <select value={typeFilter} onChange={(e) => setTypeFilter(e.target.value as any)} className="w-full bg-black/30 border border-white/10 rounded-md h-9 px-3">
+          <label className="block text-xs text-neutral-600 mb-1">Type</label>
+          <select value={typeFilter} onChange={(e) => setTypeFilter(e.target.value as any)} className="w-full bg-white border border-neutral-200 rounded-md h-9 px-3">
             <option value="all">All</option>
             <option value="purchase">Purchase</option>
             <option value="sell">Sell</option>
           </select>
         </div>
         <div>
-          <label className="block text-xs text-neutral-400 mb-1">Status</label>
-          <select value={statusFilter} onChange={(e) => setStatusFilter(e.target.value as any)} className="w-full bg-black/30 border border-white/10 rounded-md h-9 px-3">
+          <label className="block text-xs text-neutral-600 mb-1">Status</label>
+          <select value={statusFilter} onChange={(e) => setStatusFilter(e.target.value as any)} className="w-full bg-white border border-neutral-200 rounded-md h-9 px-3">
             <option value="all">All</option>
             <option value="created">Created</option>
             <option value="scheduled">Scheduled</option>
@@ -90,8 +90,8 @@ export default function OrdersPage() {
           </select>
         </div>
         <div>
-          <label className="block text-xs text-neutral-400 mb-1">Time</label>
-          <select value={timeFilter} onChange={(e) => setTimeFilter(e.target.value as any)} className="w-full bg-black/30 border border-white/10 rounded-md h-9 px-3">
+          <label className="block text-xs text-neutral-600 mb-1">Time</label>
+          <select value={timeFilter} onChange={(e) => setTimeFilter(e.target.value as any)} className="w-full bg-white border border-neutral-200 rounded-md h-9 px-3">
             <option value="all">All time</option>
             <option value="7d">Last 7 days</option>
             <option value="30d">Last 30 days</option>
@@ -99,8 +99,8 @@ export default function OrdersPage() {
           </select>
         </div>
         <div>
-          <label className="block text-xs text-neutral-400 mb-1">Sort by</label>
-          <select value={sortBy} onChange={(e) => setSortBy(e.target.value as any)} className="w-full bg-black/30 border border-white/10 rounded-md h-9 px-3">
+          <label className="block text-xs text-neutral-600 mb-1">Sort by</label>
+          <select value={sortBy} onChange={(e) => setSortBy(e.target.value as any)} className="w-full bg-white border border-neutral-200 rounded-md h-9 px-3">
             <option value="newest">Newest</option>
             <option value="oldest">Oldest</option>
             <option value="amount_desc">Amount: High to Low</option>
@@ -111,37 +111,37 @@ export default function OrdersPage() {
 
       {/* Summary */}
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-        <div className="glass rounded-xl p-4">
-          <div className="text-xs text-neutral-400">Orders</div>
+        <div className="bg-white border border-neutral-200 rounded-xl p-4 shadow-sm">
+          <div className="text-xs text-neutral-600">Orders</div>
           <div className="text-xl font-semibold">{filtered.length}</div>
         </div>
-        <div className="glass rounded-xl p-4">
-          <div className="text-xs text-neutral-400">Total (Paid)</div>
+        <div className="bg-white border border-neutral-200 rounded-xl p-4 shadow-sm">
+          <div className="text-xs text-neutral-600">Total (Paid)</div>
           <div className="text-xl font-semibold">₹ {totalPaid.toLocaleString('en-IN')}</div>
         </div>
-        <div className="glass rounded-xl p-4">
-          <div className="text-xs text-neutral-400">Total (Created)</div>
+        <div className="bg-white border border-neutral-200 rounded-xl p-4 shadow-sm">
+          <div className="text-xs text-neutral-600">Total (Created)</div>
           <div className="text-xl font-semibold">₹ {totalCreated.toLocaleString('en-IN')}</div>
         </div>
       </div>
 
       {/* List */}
       {filtered.length === 0 ? (
-        <div className="glass rounded-xl p-8 text-center text-neutral-300">
+        <div className="bg-white border border-neutral-200 rounded-xl p-8 text-center text-neutral-600 shadow-sm">
           No orders found for the selected filters.
         </div>
       ) : (
         <div className="grid gap-3">
           {filtered.map((o) => (
-            <div key={o._id || o.id} className="glass rounded-xl p-4">
+            <div key={o._id || o.id} className="bg-white border border-neutral-200 rounded-xl p-4 shadow-sm">
               <div className="flex items-start justify-between gap-4">
                 <div className="text-sm space-y-1">
                   <div className="flex items-center gap-2">
-                    <span className="px-2 py-0.5 rounded-full text-xs bg-white/10">{(o.type || 'order').toUpperCase()}</span>
+                    <span className="px-2 py-0.5 rounded-full text-xs bg-neutral-100 border border-neutral-200">{(o.type || 'order').toUpperCase()}</span>
                     {badge(o.status)}
                   </div>
                   {o.type === 'purchase' && Array.isArray(o.items) && o.items.length > 0 ? (
-                    <div className="text-neutral-300">
+                    <div className="text-neutral-700">
                       {o.items.map((it: any, idx: number) => (
                         <div key={idx} className="flex justify-between">
                           <span>{it.name} × {it.quantity}</span>
@@ -150,20 +150,20 @@ export default function OrdersPage() {
                       ))}
                     </div>
                   ) : (
-                    <div className="text-neutral-300">
+                    <div className="text-neutral-700">
                       {(o.brand || '-')}{o.model ? ` ${o.model}` : ''} {(o.storage ? `• ${o.storage}` : '')} {(o.condition ? `• ${o.condition}` : '')}
                     </div>
                   )}
-                  <div className="text-xs text-neutral-400">
+                  <div className="text-xs text-neutral-600">
                     <span>Order ID:</span> <span className="font-mono">{o._id || o.id}</span>
                     {o.payment?.orderId ? <span> • RZP: <span className="font-mono">{o.payment.orderId}</span> ({o.payment?.status || 'created'})</span> : null}
                   </div>
-                  <div className="text-xs text-neutral-400">
+                  <div className="text-xs text-neutral-600">
                     Placed on {o.createdAt ? new Date(o.createdAt).toLocaleString() : '-'}
                   </div>
                 </div>
                 <div className="text-right">
-                  <div className="font-semibold text-emerald-400 text-lg">₹ {Number(o.price || 0).toLocaleString('en-IN')}</div>
+                  <div className="font-semibold text-emerald-600 text-lg">₹ {Number(o.price || 0).toLocaleString('en-IN')}</div>
                 </div>
               </div>
             </div>

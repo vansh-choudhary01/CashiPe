@@ -12,15 +12,15 @@ export default function BottomNav() {
     { label: 'Profile', path: '/profile' },
   ]
   return (
-    <nav className="sticky bottom-0 z-40 border-t border-white/10 bg-neutral-900/80 backdrop-blur">
+    <nav className="sticky bottom-0 z-40 border-t border-neutral-200 bg-white/90 backdrop-blur">
       <div className="mx-auto max-w-5xl grid grid-cols-5">
         {items.map((item) => (
           <Link
             key={item.label}
             href={item.path}
-            className="h-14 flex flex-col items-center justify-center text-xs text-neutral-300 hover:text-white"
+            className="h-14 flex flex-col items-center justify-center text-xs text-neutral-700 hover:text-black"
           >
-            <span className="w-5 h-5 mb-0.5 rounded-full bg-neutral-800/80" />
+            <span className="w-5 h-5 mb-0.5 rounded-full bg-neutral-200" />
             {item.label}
           </Link>
         ))}
