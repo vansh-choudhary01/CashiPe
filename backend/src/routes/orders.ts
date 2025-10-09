@@ -96,7 +96,24 @@ router.get('/:id/timeline', requireAuth, async (req: AuthRequest, res) => {
 router.post('/:id/invoice', requireAuth, async (req: AuthRequest, res) => {
   const order = await Order.findOne({ _id: req.params.id, userId: req.user!.id })
   if (!order) return res.status(404).json({ error: 'Not found' })
-  const doc = { type: 'invoice' as const, url: `https://example.com/invoices/${order.id}.pdf`, createdAt: new Date().toISOString() }
+  // Generate a simple invoice as a text blob and store as data URL (demo only)
+  const invoiceText = []
+  invoiceText.push('CashiPe - Invoice')
+  invoiceText.push('===================')
+  invoiceText.push(`Order ID: ${order._id || order.id}`)
+  invoiceText.push(`Type: ${order.type}`)
+  if (order.items && order.items.length) {
+    invoiceText.push('Items:')
+    for (const it of order.items) invoiceText.push(` - ${it.name} x${it.quantity} @ ${it.price}`)
+  } else {
+    invoiceText.push(`${order.brand || ''} ${order.model || ''} ${order.storage || ''}`)
+  }
+  invoiceText.push(`Amount: ₹ ${Number(order.price || 0).toLocaleString('en-IN')}`)
+  invoiceText.push(`Created: ${new Date(order.createdAt || Date.now()).toLocaleString()}`)
+  const text = invoiceText.join('\n')
+  const b64 = Buffer.from(text).toString('base64')
+  const url = `data:text/plain;base64,${b64}`
+  const doc = { type: 'invoice' as const, url, createdAt: new Date().toISOString() }
   order.documents = [...(order.documents || []), doc]
   await order.save()
   res.json({ document: doc })

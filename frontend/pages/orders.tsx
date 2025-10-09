@@ -133,7 +133,7 @@ export default function OrdersPage() {
       ) : (
         <div className="grid gap-3">
           {filtered.map((o) => (
-            <div key={o._id || o.id} className="bg-white border border-neutral-200 rounded-xl p-4 shadow-sm">
+            <a href={`/orders/${o._id || o.id}`} key={o._id || o.id} className="block bg-white border border-neutral-200 rounded-xl p-4 shadow-sm hover:shadow-md transition">
               <div className="flex items-start justify-between gap-4">
                 <div className="text-sm space-y-1">
                   <div className="flex items-center gap-2">
@@ -166,7 +166,7 @@ export default function OrdersPage() {
                   <div className="font-semibold text-emerald-600 text-lg">₹ {Number(o.price || 0).toLocaleString('en-IN')}</div>
                 </div>
               </div>
-            </div>
+            </a>
           ))}
         </div>
       )}

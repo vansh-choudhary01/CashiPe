@@ -1,4 +1,27 @@
 "use strict";
+var __createBinding = (this && this.__createBinding) || (Object.create ? (function(o, m, k, k2) {
+    if (k2 === undefined) k2 = k;
+    var desc = Object.getOwnPropertyDescriptor(m, k);
+    if (!desc || ("get" in desc ? !m.__esModule : desc.writable || desc.configurable)) {
+      desc = { enumerable: true, get: function() { return m[k]; } };
+    }
+    Object.defineProperty(o, k2, desc);
+}) : (function(o, m, k, k2) {
+    if (k2 === undefined) k2 = k;
+    o[k2] = m[k];
+}));
+var __setModuleDefault = (this && this.__setModuleDefault) || (Object.create ? (function(o, v) {
+    Object.defineProperty(o, "default", { enumerable: true, value: v });
+}) : function(o, v) {
+    o["default"] = v;
+});
+var __importStar = (this && this.__importStar) || function (mod) {
+    if (mod && mod.__esModule) return mod;
+    var result = {};
+    if (mod != null) for (var k in mod) if (k !== "default" && Object.prototype.hasOwnProperty.call(mod, k)) __createBinding(result, mod, k);
+    __setModuleDefault(result, mod);
+    return result;
+};
 Object.defineProperty(exports, "__esModule", { value: true });
 const express_1 = require("express");
 const zod_1 = require("zod");
@@ -13,7 +36,7 @@ const quoteSchema = zod_1.z.object({
     condition: zod_1.z.object({
         screenCracks: zod_1.z.boolean().default(false),
         bodyDents: zod_1.z.boolean().default(false),
-        batteryHealth: zod_1.z.number().min(50).max(100).default(90),
+        batteryHealth: zod_1.z.number().min(0).max(100).default(90),
         cameraIssue: zod_1.z.boolean().default(false),
         faceIdIssue: zod_1.z.boolean().default(false),
     }).default({}),
@@ -23,12 +46,11 @@ const quoteSchema = zod_1.z.object({
         earphones: zod_1.z.boolean().default(false),
     }).default({}),
 });
-router.post('/quote', (req, res) => {
+router.post('/quote', async (req, res) => {
     const parsed = quoteSchema.safeParse(req.body);
     if (!parsed.success)
         return res.status(400).json({ error: parsed.error.flatten() });
-    const { brand, model, storage, ageMonths, condition, accessories } = parsed.data;
-    const promoCode = (req.body?.promoCode || '');
+    const { brand, model, storage, ageMonths, condition, accessories, promoCode } = parsed.data;
     // Base price heuristic (stub) – replace with DB-based model pricing
     let base = 10000;
     if (brand.toLowerCase().includes('apple'))
@@ -40,9 +62,9 @@ router.post('/quote', (req, res) => {
         if (!Number.isNaN(n))
             base += Math.min(5000, Math.floor(n / 64) * 1500);
     }
-    // Age depreciation
-    const depreciation = Math.min(0.6, (ageMonths / 12) * 0.15);
-    base = Math.round(base * (1 - depreciation));
+    // Age depreciation applied to base
+    const depreciationRate = Math.min(0.6, (ageMonths / 12) * 0.15);
+    const depreciated = Math.round(base * (1 - depreciationRate));
     // Condition deductions
     let deductions = 0;
     if (condition.screenCracks)
@@ -63,32 +85,36 @@ router.post('/quote', (req, res) => {
         bonuses += 500;
     if (accessories.earphones)
         bonuses += 200;
-    const total = Math.max(500, base - deductions + bonuses);
-    // Apply promo if provided (basic check: percent off or fixed off via Promo model)
-    let promoApplied = null;
+    const prePromoTotal = Math.max(500, depreciated - deductions + bonuses);
+    // Promo lookup and application
+    let promo = null;
+    let promoDiscount = 0;
     if (promoCode) {
-        // avoid importing Promo at top to keep file lightweight; require dynamically
         try {
-            // eslint-disable-next-line @typescript-eslint/no-var-requires
-            const { Promo } = require('../models/Promo');
-            const p = Promo.findOne({ code: promoCode.trim().toUpperCase(), active: true });
-            // p is a promise; handle async
-            // NOTE: this is a best-effort synchronous-looking approach: respond without promo if not resolved
-            p.then((promo) => {
-                if (!promo)
-                    return;
-            });
+            const Promo = (await Promise.resolve().then(() => __importStar(require('../models/Promo')))).Promo;
+            promo = await Promo.findOne({ code: promoCode.trim().toUpperCase(), active: true });
+            if (promo) {
+                if (promo.type === 'percent')
+                    promoDiscount = Math.round(prePromoTotal * (promo.amount / 100));
+                else
+                    promoDiscount = Math.round(promo.amount);
+            }
         }
         catch (e) {
-            // ignore promo errors for now
+            // log and continue without promo
+            console.error('Promo lookup failed', e);
         }
     }
+    const total = Math.max(0, prePromoTotal - promoDiscount);
     res.json({
         breakdown: {
             base,
-            depreciation: Math.round(base * depreciation),
+            depreciated,
+            depreciationAmount: Math.round(base * depreciationRate),
             deductions,
             bonuses,
+            prePromoTotal,
+            promo: promo ? { code: promo.code, type: promo.type, amount: promo.amount, discount: promoDiscount } : null,
         },
         total,
         summary: `${brand} ${model}${storage ? ' ' + storage : ''}`,

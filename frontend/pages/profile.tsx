@@ -32,6 +32,13 @@ export default function ProfilePage() {
       try {
         const m = await MembershipAPI.status()
         setMembership(m)
+        const a = await (await import('../lib/api')).AddressesAPI.list()
+        setAddress1('')
+        setAddress2('')
+        setCity('')
+        setPin('')
+        // store addresses somewhere if needed
+        // For now we don't display them in this simplified UI
       } catch {}
       setLoading(false)
     }
@@ -50,10 +57,15 @@ export default function ProfilePage() {
   async function onSaveAddress(e: React.FormEvent) {
     e.preventDefault()
     setSaving(true)
-    // TODO: Hook up backend endpoint for address book
-    await new Promise((r) => setTimeout(r, 600))
-    setSaving(false)
-    alert('Address saved (placeholder).')
+    try {
+      const payload = { address1, address2, city, pin, phone }
+      await (await import('../lib/api')).AddressesAPI.create(payload)
+      alert('Address saved')
+    } catch (err:any) {
+      alert(err?.message || 'Failed to save address')
+    } finally {
+      setSaving(false)
+    }
   }
 
   async function onChangePassword(e: React.FormEvent) {

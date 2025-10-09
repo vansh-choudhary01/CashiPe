@@ -1,5 +1,14 @@
-/node_modules
-/build
-/.vscode
-.env
-/.next
+# Node modules
+/node_modules/
+
+# Build output
+/build/
+
+# VSCode configuration
+/.vscode/
+
+# Environment variables
+/.env
+
+# Next.js build output
+/.next/

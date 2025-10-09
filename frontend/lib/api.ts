@@ -120,11 +120,20 @@ export const OrdersAPI = {
 
 export const PickupAPI = {
   slots: () => api('/pickup/slots'),
+  reschedule: (orderId: string, pickupAt: string) => api('/pickup/reschedule', { method: 'POST', body: JSON.stringify({ orderId, pickupAt }), auth: true }),
+  cancel: (orderId: string) => api('/pickup/cancel', { method: 'POST', body: JSON.stringify({ orderId }), auth: true }),
 }
 
 export const MembershipAPI = {
   status: () => api('/membership/status', { auth: true }),
   enroll: (tier: 'gold') => api('/membership/enroll', { method: 'POST', body: JSON.stringify({ tier }), auth: true }),
+}
+
+export const AddressesAPI = {
+  list: () => api('/addresses', { auth: true }),
+  create: (payload: any) => api('/addresses', { method: 'POST', body: JSON.stringify(payload), auth: true }),
+  update: (id: string, payload: any) => api(`/addresses/${id}`, { method: 'PUT', body: JSON.stringify(payload), auth: true }),
+  delete: (id: string) => api(`/addresses/${id}`, { method: 'DELETE', auth: true }),
 }
 
 export const PaymentsAPI = {
@@ -136,9 +145,38 @@ export const PaymentsAPI = {
     }),
   razorpayVerify: (payload: { order_id: string; payment_id: string; signature: string }) =>
     api('/payments/razorpay/verify', { method: 'POST', body: JSON.stringify(payload) }),
+  savePayoutMethod: (orderId: string, payout: { method: 'upi' | 'bank' | 'wallet'; upi?: string; bank?: { ifsc: string; account: string; name: string } }) =>
+    api('/payments/payout-method', { method: 'POST', body: JSON.stringify({ orderId, payout }), auth: true }),
 }
 
 export const AccessoriesAPI = {
   list: () => api('/accessories'),
   get: (id: string) => api(`/accessories/${id}`),
+}
+
+export const PricingAPI = {
+  quote: (payload: {
+    category: string
+    brand: string
+    model: string
+    storage?: string
+    ageMonths?: number
+    condition?: { screenCracks?: boolean; bodyDents?: boolean; batteryHealth?: number; cameraIssue?: boolean; faceIdIssue?: boolean }
+    accessories?: { box?: boolean; charger?: boolean; earphones?: boolean }
+    promoCode?: string
+  }) => api('/pricing/quote', { method: 'POST', body: JSON.stringify(payload) }),
+  identify: (payload: { imei?: string; serial?: string }) => api('/pricing/identify', { method: 'POST', body: JSON.stringify(payload) }),
+}
+
+export const PromosAPI = {
+  check: (code: string) => api('/promos/check', { method: 'POST', body: JSON.stringify({ code }) }),
+  create: (payload: any) => api('/promos', { method: 'POST', body: JSON.stringify(payload) }),
+  list: () => api('/promos'),
+  update: (id: string, payload: any) => api(`/promos/${id}`, { method: 'PUT', body: JSON.stringify(payload) }),
+  delete: (id: string) => api(`/promos/${id}`, { method: 'DELETE' }),
+}
+
+export const OrderDetailAPI = {
+  timeline: (id: string) => api(`/orders/${id}/timeline`, { auth: true }),
+  createInvoice: (id: string) => api(`/orders/${id}/invoice`, { method: 'POST', auth: true }),
 }
