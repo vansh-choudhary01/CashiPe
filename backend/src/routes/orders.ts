@@ -20,7 +20,13 @@ const createSellOrderSchema = z.object({
 router.post('/sell', requireAuth, async (req: AuthRequest, res) => {
   const parsed = createSellOrderSchema.safeParse(req.body)
   if (!parsed.success) return res.status(400).json({ error: parsed.error.flatten() })
-  const o = await Order.create({ type: 'sell', userId: req.user!.id, status: 'created', ...parsed.data })
+  const o = await Order.create({
+    type: 'sell',
+    userId: req.user!.id,
+    status: 'created',
+    ...parsed.data,
+    timeline: [{ status: 'created', at: new Date().toISOString(), note: 'Order created' }],
+  })
   res.json({ order: o })
 })
 
@@ -39,6 +45,10 @@ router.post('/schedule', requireAuth, async (req: AuthRequest, res) => {
   order.pickupAt = pickupAt
   order.address = address
   order.status = 'scheduled'
+  order.timeline = [
+    ...(order.timeline || []),
+    { status: 'scheduled', at: new Date().toISOString(), note: `Pickup at ${pickupAt}` },
+  ]
   await order.save()
   res.json({ order })
 })
@@ -52,6 +62,23 @@ router.get('/:id', requireAuth, async (req: AuthRequest, res) => {
   const order = await Order.findOne({ _id: req.params.id, userId: req.user!.id })
   if (!order) return res.status(404).json({ error: 'Not found' })
   res.json({ order })
+})
+
+// Timeline retrieval
+router.get('/:id/timeline', requireAuth, async (req: AuthRequest, res) => {
+  const order = await Order.findOne({ _id: req.params.id, userId: req.user!.id })
+  if (!order) return res.status(404).json({ error: 'Not found' })
+  res.json({ timeline: order.timeline || [] })
+})
+
+// Create invoice document (stub URL)
+router.post('/:id/invoice', requireAuth, async (req: AuthRequest, res) => {
+  const order = await Order.findOne({ _id: req.params.id, userId: req.user!.id })
+  if (!order) return res.status(404).json({ error: 'Not found' })
+  const doc = { type: 'invoice' as const, url: `https://example.com/invoices/${order.id}.pdf`, createdAt: new Date().toISOString() }
+  order.documents = [...(order.documents || []), doc]
+  await order.save()
+  res.json({ document: doc })
 })
 
 export default router

@@ -13,6 +13,7 @@ const quoteSchema = z.object({
   storage: z.string(),
   condition: z.string(),
   questionnaire: z.record(z.any()).optional(),
+  promoCode: z.string().optional(),
 })
 
 // Simple rule engine + placeholder for AI market adjustment
@@ -46,16 +47,36 @@ router.post('/', requireAuth, async (req: AuthRequest, res) => {
   const parsed = quoteSchema.safeParse(req.body)
   if (!parsed.success) return res.status(400).json({ error: parsed.error.flatten() })
   const { category, brand, model, storage, condition, questionnaire } = parsed.data
+  const promoCode = (req.body?.promoCode || '') as string | undefined
   const device = await DeviceCatalog.findOne({ category, brand, model })
   if (!device) return res.status(404).json({ error: 'Device not found' })
   const basePrice = device.basePrice
   const final = computePrice(basePrice, condition, storage, questionnaire)
+  let promoDiscount = 0
+  let appliedCode: string | undefined
+  if (promoCode) {
+    try {
+      const promo = await (await import('../models/Promo')).Promo.findOne({ code: promoCode.trim().toUpperCase(), active: true })
+      if (promo) {
+        appliedCode = promo.code
+        if (promo.type === 'percent') promoDiscount = Math.round(final * (promo.amount / 100))
+        else promoDiscount = Math.round(promo.amount)
+      }
+    } catch (e) {
+      // ignore promo errors
+    }
+  }
+
+  const discounted = Math.max(0, final - promoDiscount)
+
   const q = await Quote.create({
     userId: req.user!.id,
     category, brand, model, storage, condition,
     questionnaire,
     basePrice,
-    finalPrice: final,
+    finalPrice: discounted,
+    promoCode: appliedCode,
+    promoDiscount,
   })
   res.json({ quote: q })
 })

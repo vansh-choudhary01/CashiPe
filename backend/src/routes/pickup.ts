@@ -36,3 +36,28 @@ router.post('/schedule', requireAuth, async (req: AuthRequest, res) => {
 })
 
 export default router
+
+// Extra endpoints
+router.post('/reschedule', requireAuth, async (req: AuthRequest, res) => {
+  const parsed = scheduleSchema.safeParse(req.body)
+  if (!parsed.success) return res.status(400).json({ error: parsed.error.flatten() })
+  const { orderId, pickupAt } = parsed.data
+  const order = await Order.findOne({ _id: orderId, userId: req.user!.id })
+  if (!order) return res.status(404).json({ error: 'Order not found' })
+  order.pickupAt = pickupAt
+  order.status = 'scheduled'
+  await order.save()
+  res.json({ order })
+})
+
+router.post('/cancel', requireAuth, async (req: AuthRequest, res) => {
+  const cancelSchema = z.object({ orderId: z.string() })
+  const parsed = cancelSchema.safeParse(req.body)
+  if (!parsed.success) return res.status(400).json({ error: parsed.error.flatten() })
+  const { orderId } = parsed.data
+  const order = await Order.findOne({ _id: orderId, userId: req.user!.id })
+  if (!order) return res.status(404).json({ error: 'Order not found' })
+  order.status = 'cancelled'
+  await order.save()
+  res.json({ order })
+})

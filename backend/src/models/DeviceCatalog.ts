@@ -1,6 +1,6 @@
-import mongoose, { Schema, Document } from 'mongoose'
+import mongoose, { Schema } from 'mongoose'
 
-export interface IDeviceCatalog extends Document {
+export interface IDeviceCatalog {
   category: string // phone, laptop, tablet, etc.
   brand: string
   model: string

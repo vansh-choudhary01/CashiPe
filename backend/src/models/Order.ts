@@ -24,6 +24,9 @@ export interface IOrder {
     signature?: string
     status?: 'created' | 'verified'
   }
+  timeline?: { status: string; at: string; note?: string }[]
+  documents?: { type: 'invoice'; url: string; createdAt: string }[]
+  payout?: { method: 'upi' | 'bank' | 'wallet'; upi?: string; bank?: { ifsc: string; account: string; name: string } }
   // Shared
   status: OrderStatus
   pickupAt?: string
@@ -55,6 +58,29 @@ const OrderSchema = new Schema<IOrder>({
     paymentId: String,
     signature: String,
     status: { type: String, enum: ['created', 'verified'], default: 'created' },
+  },
+  timeline: [
+    {
+      status: String,
+      at: String,
+      note: String,
+    },
+  ],
+  documents: [
+    {
+      type: { type: String, enum: ['invoice'] },
+      url: String,
+      createdAt: String,
+    },
+  ],
+  payout: {
+    method: { type: String, enum: ['upi', 'bank', 'wallet'] },
+    upi: String,
+    bank: {
+      ifsc: String,
+      account: String,
+      name: String,
+    },
   },
   status: { type: String, enum: ['created','scheduled','picked_up','inspected','paid','delivered','cancelled'], default: 'created' },
   pickupAt: String,

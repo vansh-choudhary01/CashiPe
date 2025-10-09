@@ -67,11 +67,35 @@ router.post('/razorpay/verify', async (req, res) => {
           'payment.signature': signature,
           'payment.status': 'verified',
         },
+        $push: { timeline: { status: 'paid', at: new Date().toISOString(), note: 'Payment verified via Razorpay' } },
       },
     )
   }
 
   res.json({ valid })
+})
+
+// Save payout method for an order
+const payoutSchema = z.object({
+  orderId: z.string(),
+  payout: z.object({
+    method: z.enum(['upi', 'bank', 'wallet']),
+    upi: z.string().optional(),
+    bank: z
+      .object({ ifsc: z.string(), account: z.string(), name: z.string() })
+      .optional(),
+  }),
+})
+
+router.post('/payout-method', requireAuth, async (req: AuthRequest, res) => {
+  const parsed = payoutSchema.safeParse(req.body)
+  if (!parsed.success) return res.status(400).json({ error: parsed.error.flatten() })
+  const { orderId, payout } = parsed.data
+  const order = await Order.findOne({ _id: orderId, userId: req.user!.id })
+  if (!order) return res.status(404).json({ error: 'Order not found' })
+  order.payout = payout as any
+  await order.save()
+  res.json({ order })
 })
 
 // ----- Paytm Stubs -----

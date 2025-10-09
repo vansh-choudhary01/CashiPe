@@ -1,6 +1,6 @@
-import mongoose, { Schema, Document } from 'mongoose'
+import mongoose, { Schema } from 'mongoose'
 
-export interface IQuote extends Document {
+export interface IQuote {
   userId?: string
   category: string
   brand: string
@@ -10,6 +10,8 @@ export interface IQuote extends Document {
   questionnaire?: Record<string, any>
   basePrice: number
   finalPrice: number
+  promoCode?: string
+  promoDiscount?: number
   createdAt: Date
   updatedAt: Date
 }
@@ -24,6 +26,8 @@ const QuoteSchema = new Schema<IQuote>({
   questionnaire: { type: Schema.Types.Mixed },
   basePrice: { type: Number, required: true },
   finalPrice: { type: Number, required: true },
+  promoCode: { type: String },
+  promoDiscount: { type: Number },
 }, { timestamps: true })
 
 export const Quote = mongoose.models.Quote || mongoose.model<IQuote>('Quote', QuoteSchema)
