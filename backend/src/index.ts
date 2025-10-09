@@ -15,6 +15,7 @@ import membershipRouter from './routes/membership'
 import reviewsRouter from './routes/reviews'
 import accessoriesRouter from './routes/accessories'
 import pricingRouter from './routes/pricing'
+import addressesRouter from './routes/addresses'
 import promosRouter from './routes/promos'
 
 const app = express()
@@ -48,6 +49,7 @@ app.use('/reviews', reviewsRouter)
 app.use('/accessories', accessoriesRouter)
 app.use('/pricing', pricingRouter)
 app.use('/promos', promosRouter)
+app.use('/addresses', addressesRouter)
 // TODO: mount routes (orders, pickup, payments, accessories, membership, reviews, admin)
 
 // Error handler

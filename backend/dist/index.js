@@ -20,6 +20,7 @@ const membership_1 = __importDefault(require("./routes/membership"));
 const reviews_1 = __importDefault(require("./routes/reviews"));
 const accessories_1 = __importDefault(require("./routes/accessories"));
 const pricing_1 = __importDefault(require("./routes/pricing"));
+const addresses_1 = __importDefault(require("./routes/addresses"));
 const promos_1 = __importDefault(require("./routes/promos"));
 const app = (0, express_1.default)();
 // Security & parsers
@@ -47,6 +48,7 @@ app.use('/reviews', reviews_1.default);
 app.use('/accessories', accessories_1.default);
 app.use('/pricing', pricing_1.default);
 app.use('/promos', promos_1.default);
+app.use('/addresses', addresses_1.default);
 // TODO: mount routes (orders, pickup, payments, accessories, membership, reviews, admin)
 // Error handler
 // eslint-disable-next-line @typescript-eslint/no-unused-vars

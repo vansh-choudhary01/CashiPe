@@ -14,6 +14,10 @@ const createSellOrderSchema = zod_1.z.object({
     price: zod_1.z.number().positive(),
     address: zod_1.z.string().min(6),
 });
+const createSellBatchSchema = zod_1.z.object({
+    items: zod_1.z.array(zod_1.z.object({ category: zod_1.z.string(), brand: zod_1.z.string(), model: zod_1.z.string(), storage: zod_1.z.string(), condition: zod_1.z.string(), price: zod_1.z.number().positive() })).min(1),
+    address: zod_1.z.string().min(6),
+});
 router.post('/sell', auth_1.requireAuth, async (req, res) => {
     const parsed = createSellOrderSchema.safeParse(req.body);
     if (!parsed.success)
@@ -26,6 +30,22 @@ router.post('/sell', auth_1.requireAuth, async (req, res) => {
         timeline: [{ status: 'created', at: new Date().toISOString(), note: 'Order created' }],
     });
     res.json({ order: o });
+});
+router.post('/sell-batch', auth_1.requireAuth, async (req, res) => {
+    const parsed = createSellBatchSchema.safeParse(req.body);
+    if (!parsed.success)
+        return res.status(400).json({ error: parsed.error.flatten() });
+    const { items, address } = parsed.data;
+    const order = await Order_1.Order.create({
+        type: 'sell',
+        userId: req.user.id,
+        status: 'created',
+        items,
+        address,
+        price: items.reduce((s, it) => s + Number(it.price || 0), 0),
+        timeline: [{ status: 'created', at: new Date().toISOString(), note: 'Batch sell order created' }],
+    });
+    res.json({ order });
 });
 const scheduleSchema = zod_1.z.object({
     orderId: zod_1.z.string(),

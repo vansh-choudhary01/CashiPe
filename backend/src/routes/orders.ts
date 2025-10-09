@@ -15,6 +15,11 @@ const createSellOrderSchema = z.object({
   address: z.string().min(6),
 })
 
+const createSellBatchSchema = z.object({
+  items: z.array(z.object({ category: z.string(), brand: z.string(), model: z.string(), storage: z.string(), condition: z.string(), price: z.number().positive() })).min(1),
+  address: z.string().min(6),
+})
+
 
 
 router.post('/sell', requireAuth, async (req: AuthRequest, res) => {
@@ -28,6 +33,22 @@ router.post('/sell', requireAuth, async (req: AuthRequest, res) => {
     timeline: [{ status: 'created', at: new Date().toISOString(), note: 'Order created' }],
   })
   res.json({ order: o })
+})
+
+router.post('/sell-batch', requireAuth, async (req: AuthRequest, res) => {
+  const parsed = createSellBatchSchema.safeParse(req.body)
+  if (!parsed.success) return res.status(400).json({ error: parsed.error.flatten() })
+  const { items, address } = parsed.data
+  const order = await Order.create({
+    type: 'sell',
+    userId: req.user!.id,
+    status: 'created',
+    items,
+    address,
+    price: items.reduce((s: number, it: any) => s + Number(it.price || 0), 0),
+    timeline: [{ status: 'created', at: new Date().toISOString(), note: 'Batch sell order created' }],
+  })
+  res.json({ order })
 })
 
 const scheduleSchema = z.object({
