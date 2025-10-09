@@ -48,10 +48,15 @@ export default function ProfilePage() {
   async function onSaveProfile(e: React.FormEvent) {
     e.preventDefault()
     setSaving(true)
-    // TODO: Hook up backend endpoint for profile updates
-    await new Promise((r) => setTimeout(r, 600))
-    setSaving(false)
-    alert('Profile saved (placeholder).')
+    try {
+      const res = await AuthAPI.updateProfile({ name, phone })
+      setUser(res.user)
+      alert('Profile updated')
+    } catch (err:any) {
+      alert(err?.message || 'Failed to update profile')
+    } finally {
+      setSaving(false)
+    }
   }
 
   async function onSaveAddress(e: React.FormEvent) {

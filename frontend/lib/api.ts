@@ -94,6 +94,10 @@ export const AuthAPI = {
     const r = await api('/auth/me', { auth: true })
     return r as { user: any }
   },
+  updateProfile: async (payload: any) => {
+    const r = await api('/auth/me', { method: 'PUT', body: JSON.stringify(payload), auth: true })
+    return r as { user: any }
+  },
   logout: async () => {
     try { await api('/auth/logout', { method: 'POST', auth: true }) } catch {}
     clearToken()
@@ -152,6 +156,7 @@ export const PaymentsAPI = {
 export const AccessoriesAPI = {
   list: () => api('/accessories'),
   get: (id: string) => api(`/accessories/${id}`),
+  addToCart: (id: string, quantity: number) => api('/accessories/cart/add', { method: 'POST', body: JSON.stringify({ id, quantity }) }),
 }
 
 export const PricingAPI = {

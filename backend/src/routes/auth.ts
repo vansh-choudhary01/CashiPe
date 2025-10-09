@@ -48,6 +48,20 @@ router.get('/me', requireAuth, async (req: AuthRequest, res) => {
   res.json({ user })
 })
 
+const updateMeSchema = z.object({ name: z.string().optional(), phone: z.string().optional(), kyc: z.object({ pan: z.string().optional(), license: z.string().optional() }).optional() })
+
+router.put('/me', requireAuth, async (req: AuthRequest, res) => {
+  const parsed = updateMeSchema.safeParse(req.body)
+  if (!parsed.success) return res.status(400).json({ error: parsed.error.flatten() })
+  const updates: any = {}
+  if (parsed.data.name !== undefined) updates.name = parsed.data.name
+  if (parsed.data.phone !== undefined) updates.phone = parsed.data.phone
+  if (parsed.data.kyc !== undefined) updates.kyc = parsed.data.kyc
+  const user = await User.findByIdAndUpdate(req.user!.id, { $set: updates }, { new: true }).select('-passwordHash')
+  if (!user) return res.status(404).json({ error: 'Not found' })
+  res.json({ user })
+})
+
 router.post('/logout', requireAuth, async (_req, res) => {
   // Stateless JWT logout: client should discard token
   res.json({ ok: true })
