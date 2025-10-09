@@ -13,7 +13,7 @@ const quoteSchema = z.object({
   condition: z.object({
     screenCracks: z.boolean().default(false),
     bodyDents: z.boolean().default(false),
-    batteryHealth: z.number().min(50).max(100).default(90),
+    batteryHealth: z.number().min(0).max(100).default(90),
     cameraIssue: z.boolean().default(false),
     faceIdIssue: z.boolean().default(false),
   }).default({}),
@@ -24,11 +24,10 @@ const quoteSchema = z.object({
   }).default({}),
 })
 
-router.post('/quote', (req, res) => {
+router.post('/quote', async (req, res) => {
   const parsed = quoteSchema.safeParse(req.body)
   if (!parsed.success) return res.status(400).json({ error: parsed.error.flatten() })
-  const { brand, model, storage, ageMonths, condition, accessories } = parsed.data
-  const promoCode = (req.body?.promoCode || '') as string | undefined
+  const { brand, model, storage, ageMonths, condition, accessories, promoCode } = parsed.data
 
   // Base price heuristic (stub) – replace with DB-based model pricing
   let base = 10000
@@ -39,9 +38,9 @@ router.post('/quote', (req, res) => {
     if (!Number.isNaN(n)) base += Math.min(5000, Math.floor(n / 64) * 1500)
   }
 
-  // Age depreciation
-  const depreciation = Math.min(0.6, (ageMonths / 12) * 0.15)
-  base = Math.round(base * (1 - depreciation))
+  // Age depreciation applied to base
+  const depreciationRate = Math.min(0.6, (ageMonths / 12) * 0.15)
+  const depreciated = Math.round(base * (1 - depreciationRate))
 
   // Condition deductions
   let deductions = 0
@@ -57,32 +56,36 @@ router.post('/quote', (req, res) => {
   if (accessories.charger) bonuses += 500
   if (accessories.earphones) bonuses += 200
 
-  const total = Math.max(500, base - deductions + bonuses)
+  const prePromoTotal = Math.max(500, depreciated - deductions + bonuses)
 
-  // Apply promo if provided (basic check: percent off or fixed off via Promo model)
-  let promoApplied: any = null
+  // Promo lookup and application
+  let promo: any = null
+  let promoDiscount = 0
   if (promoCode) {
-    // avoid importing Promo at top to keep file lightweight; require dynamically
     try {
-      // eslint-disable-next-line @typescript-eslint/no-var-requires
-      const { Promo } = require('../models/Promo')
-      const p = Promo.findOne({ code: promoCode.trim().toUpperCase(), active: true })
-      // p is a promise; handle async
-      // NOTE: this is a best-effort synchronous-looking approach: respond without promo if not resolved
-      p.then((promo: any) => {
-        if (!promo) return
-      })
+      const Promo = (await import('../models/Promo')).Promo
+      promo = await Promo.findOne({ code: promoCode.trim().toUpperCase(), active: true })
+      if (promo) {
+        if (promo.type === 'percent') promoDiscount = Math.round(prePromoTotal * (promo.amount / 100))
+        else promoDiscount = Math.round(promo.amount)
+      }
     } catch (e) {
-      // ignore promo errors for now
+      // log and continue without promo
+      console.error('Promo lookup failed', e)
     }
   }
+
+  const total = Math.max(0, prePromoTotal - promoDiscount)
 
   res.json({
     breakdown: {
       base,
-      depreciation: Math.round(base * depreciation),
+      depreciated,
+      depreciationAmount: Math.round(base * depreciationRate),
       deductions,
       bonuses,
+      prePromoTotal,
+      promo: promo ? { code: promo.code, type: promo.type, amount: promo.amount, discount: promoDiscount } : null,
     },
     total,
     summary: `${brand} ${model}${storage ? ' ' + storage : ''}`,
